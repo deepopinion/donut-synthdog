@@ -55,7 +55,9 @@ class Content:
                 self.textbox_color.apply([text_layer])
                 text_layers.append(text_layer)
                 texts.extend(text)
-                word_quads.extend(word_quads_layer)
+
+                word_quads_w_offset = [quad + text_layer.topleft for quad in word_quads_layer]
+                word_quads.extend(word_quads_w_offset)
 
         self.content_color.apply(text_layers)
 

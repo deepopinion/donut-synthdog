@@ -58,6 +58,7 @@ class SynthDoG(templates.Template):
         document_group.left = np.random.randint(document_space[0] + 1)
         document_group.top = np.random.randint(document_space[1] + 1)
         roi = np.array(paper_layer.quad, dtype=int)
+        word_quads_w_offset = [quad + document_group.topleft for quad in word_quads]
 
         layer = layers.Group([*document_group.layers, bg_layer]).merge()
         self.effect.apply([layer])
@@ -74,7 +75,7 @@ class SynthDoG(templates.Template):
             "quality": quality,
             "roi": roi,
             "words": texts,
-            "quads": word_quads,
+            "quads": word_quads_w_offset,
         }
 
         return data
