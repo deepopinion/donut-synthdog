@@ -55,10 +55,11 @@ class SynthDoG(templates.Template):
 
         document_group = layers.Group([*text_layers, paper_layer])
         document_space = np.clip(size - document_group.size, 0, None)
+        old_topleft = document_group.topleft
         document_group.left = np.random.randint(document_space[0] + 1)
         document_group.top = np.random.randint(document_space[1] + 1)
         roi = np.array(paper_layer.quad, dtype=int)
-        word_quads_w_offset = [quad + document_group.topleft for quad in word_quads]
+        word_quads_w_offset = [quad + document_group.topleft - old_topleft for quad in word_quads]
 
         layer = layers.Group([*document_group.layers, bg_layer]).merge()
         self.effect.apply([layer])
