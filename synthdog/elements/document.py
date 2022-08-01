@@ -62,7 +62,7 @@ class Document:
 
         text_layers, texts, word_quads = self.content.generate(size)
         paper_layer = self.paper.generate(size)
-        self.effect.apply([*text_layers, paper_layer])
+        meta = self.effect.apply([*text_layers, paper_layer])
 
         def apply_to_quads(quads, layers, meta=None):
             """
@@ -71,7 +71,6 @@ class Document:
             Use the meta dict given back by the effect function to calculate the effect on the word bounding quads.
             """
 
-            meta = self.sample(meta)
             pxs = meta["pxs"]
             percents = meta["percents"]
             aligns = meta["aligns"]
@@ -104,10 +103,13 @@ class Document:
             quad = np.array(origin + offsets, dtype=np.float32)
             matrix = cv2.getPerspectiveTransform(origin, quad)
 
-            for layer in layers:
-                quad = np.append(layer.quad, np.ones((4, 1)), axis=-1).dot(matrix.T)
-                layer.quad = quad[..., :2] / quad[..., 2, np.newaxis]
+            transformed_quads = []
+            for q in quads:
+                q = np.append(q, np.ones((4, 1)), axis=-1).dot(matrix.T)
+                transformed_quads.append(q[..., :2] / q[..., 2, np.newaxis])
 
-            return meta
+            return transformed_quads
 
-        return paper_layer, text_layers, texts, word_quads
+        transformed_quads = apply_to_quads(word_quads, [*text_layers, paper_layer], meta=meta['metas'][2]['meta']['meta'])
+
+        return paper_layer, text_layers, texts, transformed_quads
