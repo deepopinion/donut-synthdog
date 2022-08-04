@@ -51,13 +51,15 @@ class SynthDoG(templates.Template):
         size = (long_size, short_size) if landscape else (short_size, long_size)
 
         bg_layer = self.background.generate(size)
-        paper_layer, text_layers, texts = self.document.generate(size)
+        paper_layer, text_layers, texts, word_quads = self.document.generate(size)
 
         document_group = layers.Group([*text_layers, paper_layer])
         document_space = np.clip(size - document_group.size, 0, None)
+        old_topleft = document_group.topleft
         document_group.left = np.random.randint(document_space[0] + 1)
         document_group.top = np.random.randint(document_space[1] + 1)
         roi = np.array(paper_layer.quad, dtype=int)
+        word_quads_w_offset = [quad + document_group.topleft - old_topleft for quad in word_quads]
 
         layer = layers.Group([*document_group.layers, bg_layer]).merge()
         self.effect.apply([layer])
@@ -73,6 +75,8 @@ class SynthDoG(templates.Template):
             "label": label,
             "quality": quality,
             "roi": roi,
+            "words": texts,
+            "quads": word_quads_w_offset,
         }
 
         return data
@@ -85,6 +89,8 @@ class SynthDoG(templates.Template):
         image = data["image"]
         label = data["label"]
         quality = data["quality"]
+        words = data["words"]
+        quads = [quad.tolist() for quad in data["quads"]]  # convert ndarrays to nested list
         roi = data["roi"]
 
         # split
@@ -111,7 +117,7 @@ class SynthDoG(templates.Template):
         metadata_filepath = os.path.join(output_dirpath, metadata_filename)
         os.makedirs(os.path.dirname(metadata_filepath), exist_ok=True)
 
-        metadata = self.format_metadata(image_filename=image_filename, keys=["text_sequence"], values=[label])
+        metadata = self.format_metadata(image_filename=image_filename, keys=["text_sequence", "words", "quads"], values=[label, words, quads])
         with open(metadata_filepath, "a") as fp:
             json.dump(metadata, fp, ensure_ascii=False)
             fp.write("\n")

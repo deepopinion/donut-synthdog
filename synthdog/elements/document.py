@@ -9,6 +9,8 @@ from synthtiger import components
 from elements.content import Content
 from elements.paper import Paper
 
+from synthtiger.layers import Group
+import cv2
 
 class Document:
     def __init__(self, config):
@@ -58,8 +60,14 @@ class Document:
             long_size = int(short_size * aspect_ratio)
             size = (long_size, short_size) if landscape else (short_size, long_size)
 
-        text_layers, texts = self.content.generate(size)
+        text_layers, texts, word_quads = self.content.generate(size)
         paper_layer = self.paper.generate(size)
-        self.effect.apply([*text_layers, paper_layer])
+        meta = self.effect.apply([*text_layers, paper_layer])
+        matrix = meta['metas'][2]['meta']['meta']['matrix']
 
-        return paper_layer, text_layers, texts
+        transformed_quads = []
+        for word_quad in word_quads:
+            quad = np.append(word_quad, np.ones((4, 1)), axis=-1).dot(matrix.T)
+            transformed_quads.append(quad[..., :2] / quad[..., 2, np.newaxis])
+
+        return paper_layer, text_layers, texts, transformed_quads
