@@ -118,6 +118,7 @@ effect:
       args:
         sigma: [0, 1.5]
     # rotation
+    # TODO rotation is currently managed directly in template.py via PIL
     - prob: 1
       args:
         weights: [100, 33, 33, 33]

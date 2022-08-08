@@ -34,19 +34,10 @@ class SynthDoG(templates.Template):
                 components.Switch(components.Brightness()),
                 components.Switch(components.MotionBlur()),
                 components.Switch(components.GaussianBlur()),
-                components.Switch(
-                    components.Selector(
-                        [
-                            components.Rotate(),
-                            components.Rotate(),
-                            components.Rotate(),
-                            components.Rotate(),
-                        ]
-                    )
-                ),
             ],
             **config.get("effect", {}),
         )
+        self.yield_rot_angle = lambda: np.random.choice([0, 90, 180, 270], p=[1/2, 1/6, 1/6, 1/6])
 
         # config for splits (output_filename, split_ratio etc)
         self.splits = ["train", "validation", "test"]
@@ -72,13 +63,12 @@ class SynthDoG(templates.Template):
         word_quads_w_offset = [quad + document_group.topleft - old_topleft for quad in word_quads]
 
         layer = layers.Group([*document_group.layers, bg_layer]).merge()
-        meta = self.effect.apply([layer])
-        rot_angle = meta['metas'][6]['meta']['meta']['angle']
-
-        if np.isclose(rot_angle, 90) or np.isclose(rot_angle, 270):
-            size = size[::-1]  # flip width and height if 90- or 270-degree rotation was applied
+        self.effect.apply([layer])
 
         image = layer.output(bbox=[0, 0, *size])
+        image_pil = Image.fromarray(image.astype(np.uint8))
+        image_pil = image_pil.rotate(self.yield_rot_angle(), expand=True)
+        image = np.asarray(image_pil)
         label = " ".join(texts)
         label = label.strip()
         label = re.sub(r"\s+", " ", label)
