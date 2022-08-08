@@ -34,6 +34,16 @@ class SynthDoG(templates.Template):
                 components.Switch(components.Brightness()),
                 components.Switch(components.MotionBlur()),
                 components.Switch(components.GaussianBlur()),
+                components.Switch(
+                    components.Selector(
+                        [
+                            components.Rotate(),
+                            components.Rotate(),
+                            components.Rotate(),
+                            components.Rotate(),
+                        ]
+                    )
+                ),
             ],
             **config.get("effect", {}),
         )
@@ -62,7 +72,11 @@ class SynthDoG(templates.Template):
         word_quads_w_offset = [quad + document_group.topleft - old_topleft for quad in word_quads]
 
         layer = layers.Group([*document_group.layers, bg_layer]).merge()
-        self.effect.apply([layer])
+        meta = self.effect.apply([layer])
+        rot_angle = meta['metas'][6]['meta']['meta']['angle']
+
+        if np.isclose(rot_angle, 90) or np.isclose(rot_angle, 270):
+            size = size[::-1]  # flip width and height if 90- or 270-degree rotation was applied
 
         image = layer.output(bbox=[0, 0, *size])
         label = " ".join(texts)

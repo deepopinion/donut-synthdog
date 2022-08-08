@@ -117,3 +117,12 @@ effect:
     - prob: 1
       args:
         sigma: [0, 1.5]
+    # rotation
+    - prob: 1
+      args:
+        weights: [100, 33, 33, 33]
+        args:
+          - angle: [0,0] # fixed angles by setting hi and lo bounds of the sample space equal
+          - angle: [90, 90]
+          - angle: [180, 180]
+          - angle: [270,270]
