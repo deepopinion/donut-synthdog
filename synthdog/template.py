@@ -37,7 +37,8 @@ class SynthDoG(templates.Template):
             ],
             **config.get("effect", {}),
         )
-        self.yield_rot_angle = lambda: np.random.choice([0, 90, 180, 270], p=[1/2, 1/6, 1/6, 1/6])
+        # self.yield_rot_angle = lambda: np.random.choice([0, 90, 180, 270], p=[1/2, 1/6, 1/6, 1/6])
+        self.yield_rot_angle = lambda: 0
 
         # config for splits (output_filename, split_ratio etc)
         self.splits = ["train", "validation", "test"]
