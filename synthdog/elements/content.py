@@ -44,9 +44,9 @@ class Content:
 
         for layout in layouts:
             font = self.font.sample()
-            reader = np.random.choice(self.readers, p=self.reader_probs)
 
             for bbox, align in layout:
+                reader = np.random.choice(self.readers, p=self.reader_probs)
                 x, y, w, h = bbox
                 text_layer, text, word_quads_layer = self.textbox.generate((w, h), reader, font)
 
