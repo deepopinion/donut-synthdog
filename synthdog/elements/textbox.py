@@ -37,6 +37,9 @@ class TextBox:
             char_scale = height / char_layer.height
             char_layer.bbox = [left, top, *(char_layer.size * char_scale)]
             if char_layer.right > width:
+                # if box would get overfilled, reset the iterator to the beginning of the word and break
+                for _ in word + " ":
+                    text.prev()
                 break
 
             char_layers.append(char_layer)

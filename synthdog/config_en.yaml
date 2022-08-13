@@ -31,8 +31,11 @@ document:
 
   content:
     margin: [0, 0.1]
-    text:
-      path: resources/corpus/enwiki.txt
+    text: # text readers
+      - path: resources/corpus/enwiki.txt
+        prob: 0.8
+      - path: resources/corpus/numbers.txt
+        prob: 0.2
     font:
       paths: [resources/font/en]
       weights: [1]

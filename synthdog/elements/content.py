@@ -14,7 +14,13 @@ from utils import TextReader
 class Content:
     def __init__(self, config):
         self.margin = config.get("margin", [0, 0.1])
-        self.reader = TextReader(**config.get("text", {}))
+        if isinstance(config.get("text"), dict):  # for backwards compatibility with single-reader config files
+            self.readers = [TextReader(**config.get("text", {}))]
+            self.reader_probs = [1.0]
+        else:
+            self.readers = [TextReader(cf['path']) for cf in config.get("text", [])]
+            self.reader_probs = [cf['prob'] for cf in config.get("text", [])]
+            self.reader_probs = np.array(self.reader_probs) / sum(self.reader_probs)
         self.font = components.BaseFont(**config.get("font", {}))
         self.layout = GridStack(config.get("layout", {}))
         self.textbox = TextBox(config.get("textbox", {}))
@@ -33,15 +39,16 @@ class Content:
         text_layers, texts = [], []
         word_quads = []
         layouts = self.layout.generate(layout_bbox)
-        self.reader.move(np.random.randint(len(self.reader)))
+        for reader in self.readers:
+            reader.move(np.random.randint(len(reader)))
 
         for layout in layouts:
             font = self.font.sample()
+            reader = np.random.choice(self.readers, p=self.reader_probs)
 
             for bbox, align in layout:
                 x, y, w, h = bbox
-                text_layer, text, word_quads_layer = self.textbox.generate((w, h), self.reader, font)
-                self.reader.prev()
+                text_layer, text, word_quads_layer = self.textbox.generate((w, h), reader, font)
 
                 if text_layer is None:
                     continue
