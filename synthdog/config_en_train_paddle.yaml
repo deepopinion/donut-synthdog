@@ -1,3 +1,5 @@
+# Configuration to train custom OCR models (PaddleOCR).
+# A lot more numbers and worse quality than default to make OCR more challenging
 quality: [50, 95]
 landscape: 0.5
 short_size: [720, 1024]
