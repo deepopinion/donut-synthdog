@@ -6,6 +6,7 @@ MIT License
 import json
 import os
 import random
+from collections import defaultdict
 from typing import Any, Dict, List, Tuple, Union
 
 import torch
@@ -31,7 +32,7 @@ class DonutDataset(Dataset):
     """
     DonutDataset which is saved in huggingface datasets format. (see details in https://huggingface.co/docs/datasets)
     Each row, consists of image path(png/jpg/jpeg) and gt data (json/jsonl/txt),
-    and it will be converted into input_tensor(vectorized image) and input_ids(tokenized string).
+    and it will be converted into input_tensor(vectorized image) and input_ids(tokenized string)
 
     Args:
         dataset_name_or_path: name of dataset (available at huggingface.co/datasets) or the path containing image files and metadata.jsonl
@@ -94,7 +95,7 @@ class DonutDataset(Dataset):
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
-        Load image from image_path of given dataset_path and convert into input_tensor and labels
+        Load image from image_path of given dataset_path and convert into input_tensor and labels.
         Convert gt data into input_ids (tokenized string)
 
         Returns:
@@ -136,19 +137,54 @@ class DonutDataset(Dataset):
 
 class JSONParseEvaluator:
     """
-    Calculate n-TED(Normalized Tree Edit Distance) based accuracy between a predicted json and a gold json,
-    calculated as,
-        accuracy = 1 - TED(normalize(pred), normalize(gold)) / TED({}, normalize(gold))
+    Calculate n-TED(Normalized Tree Edit Distance) based accuracy and F1 accuracy score
     """
 
     @staticmethod
-    def update_cost(label1: str, label2: str):
+    def flatten(data: dict):
+        """
+        Convert Dictionary into Non-nested Dictionary
+        Example:
+            input(dict)
+                {
+                    "menu": [
+                        {"name" : ["cake"], "count" : ["2"]},
+                        {"name" : ["juice"], "count" : ["1"]},
+                    ]
+                }
+            output(list)
+                [
+                    ("menu.name", "cake"),
+                    ("menu.count", "2"),
+                    ("menu.name", "juice"),
+                    ("menu.count", "1"),
+                ]
+        """
+        flatten_data = list()
+
+        def _flatten(value, key=""):
+            if type(value) is dict:
+                for child_key, child_value in value.items():
+                    _flatten(child_value, f"{key}.{child_key}" if key else child_key)
+            elif type(value) is list:
+                for value_item in value:
+                    _flatten(value_item, key)
+            else:
+                flatten_data.append((key, value))
+
+        _flatten(data)
+        return flatten_data
+
+    @staticmethod
+    def update_cost(node1: Node, node2: Node):
         """
         Update cost for tree edit distance.
         If both are leaf node, calculate string edit distance between two labels (special token '<leaf>' will be ignored).
         If one of them is leaf node, cost is length of string in leaf node + 1.
-        If neither are leaf node, cost is 0 if label1 is same with label2 othewise 1.
+        If neither are leaf node, cost is 0 if label1 is same with label2 othewise 1
         """
+        label1 = node1.label
+        label2 = node2.label
         label1_leaf = "<leaf>" in label1
         label2_leaf = "<leaf>" in label2
         if label1_leaf == True and label2_leaf == True:
@@ -161,7 +197,7 @@ class JSONParseEvaluator:
             return int(label1 != label2)
 
     @staticmethod
-    def insert_and_remove_cost(node):
+    def insert_and_remove_cost(node: Node):
         """
         Insert and remove cost for tree edit distance.
         If leaf node, cost is length of label name.
@@ -175,15 +211,15 @@ class JSONParseEvaluator:
 
     def normalize_dict(self, data: Union[Dict, List, Any]):
         """
-        Sort by value, while iterate over element if data is list.
+        Sort by value, while iterate over element if data is list
         """
         if not data:
             return {}
 
         if isinstance(data, dict):
             new_data = dict()
-            for key, value in sorted(data.items()):
-                value = self.normalize_dict(value)
+            for key in sorted(data.keys(), key=lambda k: (len(k), k)):
+                value = self.normalize_dict(data[key])
                 if value:
                     if not isinstance(value, list):
                         value = [value]
@@ -192,16 +228,32 @@ class JSONParseEvaluator:
         elif isinstance(data, list):
             if all(isinstance(item, dict) for item in data):
                 new_data = []
-                for item in sorted(data, key=lambda x: str(sorted(x.items()))):
+                for item in data:
                     item = self.normalize_dict(item)
                     if item:
                         new_data.append(item)
             else:
-                new_data = sorted([str(item) for item in data if type(item) in {str, int, float} and str(item)])
+                new_data = [str(item).strip() for item in data if type(item) in {str, int, float} and str(item).strip()]
         else:
-            new_data = [str(data)]
+            new_data = [str(data).strip()]
 
         return new_data
+
+    def cal_f1(self, preds: List[dict], answers: List[dict]):
+        """
+        Calculate global F1 accuracy score (field-level, micro-averaged) by counting all true positives, false negatives and false positives
+        """
+        total_tp, total_fn_or_fp = 0, 0
+        for pred, answer in zip(preds, answers):
+            pred, answer = self.flatten(self.normalize_dict(pred)), self.flatten(self.normalize_dict(answer))
+            for field in pred:
+                if field in answer:
+                    total_tp += 1
+                    answer.remove(field)
+                else:
+                    total_fn_or_fp += 1
+            total_fn_or_fp += len(answer)
+        return total_tp / (total_tp + total_fn_or_fp / 2)
 
     def construct_tree_from_dict(self, data: Union[Dict, List], node_name: str = None):
         """
@@ -252,7 +304,7 @@ class JSONParseEvaluator:
             raise Exception(data, node_name)
         return node
 
-    def cal_acc(self, pred, answer):
+    def cal_acc(self, pred: dict, answer: dict):
         """
         Calculate normalized tree edit distance(nTED) based accuracy.
         1) Construct tree from dict,

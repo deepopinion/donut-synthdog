@@ -206,7 +206,7 @@ class BARTDecoder(nn.Module):
         if newly_added_num > 0:
             self.model.resize_token_embeddings(len(self.tokenizer))
 
-    def prepare_inputs_for_inference(self, input_ids: torch.Tensor, past=None, use_cache: bool = None, **model_kwargs):
+    def prepare_inputs_for_inference(self, input_ids: torch.Tensor, encoder_outputs: torch.Tensor, past=None, use_cache: bool = None, attention_mask: torch.Tensor = None):
         """
         Args:
             input_ids: (batch_size, sequence_lenth)
@@ -223,7 +223,7 @@ class BARTDecoder(nn.Module):
             "attention_mask": attention_mask,
             "past_key_values": past,
             "use_cache": use_cache,
-            "encoder_hidden_states": model_kwargs["encoder_outputs"].last_hidden_state,
+            "encoder_hidden_states": encoder_outputs.last_hidden_state,
         }
         return output
 
@@ -443,8 +443,6 @@ class DonutModel(PreTrainedModel):
         if self.device.type == "cuda":  # half is not compatible in cpu implementation.
             image_tensors = image_tensors.half()
             image_tensors = image_tensors.to(self.device)
-        else:
-            image_tensors = image_tensors.to(torch.bfloat16)
 
         if prompt_tensors is None:
             prompt_tensors = self.decoder.tokenizer(prompt, add_special_tokens=False, return_tensors="pt")["input_ids"]
@@ -592,7 +590,7 @@ class DonutModel(PreTrainedModel):
                 Name of a pretrained model name either registered in huggingface.co. or saved in local,
                 e.g., `naver-clova-ix/donut-base`, or `naver-clova-ix/donut-base-finetuned-rvlcdip`
         """
-        model = super(DonutModel, cls).from_pretrained(pretrained_model_name_or_path, *model_args, **kwargs)
+        model = super(DonutModel, cls).from_pretrained(pretrained_model_name_or_path, revision="official", *model_args, **kwargs)
 
         # truncate or interplolate position embeddings of donut decoder
         max_length = kwargs.get("max_length", model.config.max_position_embeddings)
