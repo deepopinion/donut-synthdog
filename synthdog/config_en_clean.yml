@@ -1,25 +1,27 @@
+# Configuration for multipage document experiments in AutoTransformers. 
+# More scan-like, larger blocks of text, and uniform size
 quality: [50, 95]
-landscape: 0.5
-short_size: [720, 1024]
-aspect_ratio: [1, 2]
+landscape: 0
+short_size: [1024, 1024]
+aspect_ratio: [1.414, 1.414]
 
-background:
-  image:
-    paths: [resources/background]
-    weights: [1]
+# background:
+#   image:
+#     paths: [resources/background]
+#     weights: [1]
 
-  effect:
-    args:
-      # gaussian blur
-      - prob: 1
-        args:
-          sigma: [0, 10]
+#   effect:
+#     args:
+#       # gaussian blur
+#       - prob: 1
+#         args:
+#           sigma: [0, 10]
 
 document:
-  fullscreen: 0.5
-  landscape: 0.5
-  short_size: [480, 1024]
-  aspect_ratio: [1, 2]
+  fullscreen: 0
+  landscape: 0
+  short_size: [1024, 1024]
+  aspect_ratio: [1.414, 1.414]
 
   paper:
     image:
@@ -38,24 +40,24 @@ document:
       weights: [1]
       bold: 0
     layout:
-      text_scale: [0.0334, 0.1]
-      max_row: 10
-      max_col: 3
-      fill: [0.5, 1]
-      full: 0.1
-      align: [left, right, center]
+      text_scale: [0.03, 0.05]
+      max_row: 30
+      max_col: 1
+      fill: [0.8, 0.8]
+      full: 0.4
+      align: [left, center]
       stack_spacing: [0.0334, 0.0334]
-      stack_fill: [0.5, 1]
-      stack_full: 0.1
+      stack_fill: [0.8, 0.8]
+      stack_full: 0.4
     textbox:
-      fill: [0.5, 1]
+      fill: [0.8, 1]
     textbox_color:
       prob: 0.2
       args:
         gray: [0, 64]
-        colorize: 1
+        colorize: 0
     content_color:
-      prob: 0.2
+      prob: 0
       args:
         gray: [0, 64]
         colorize: 1
@@ -73,30 +75,30 @@ document:
           scale: [0, 8]
           per_channel: 0
       # perspective
-      - prob: 1
-        args:
-          weights: [750, 50, 50, 25, 25, 25, 25, 50]
-          args:
-            - percents: [[0.75, 1], [0.75, 1], [0.75, 1], [0.75, 1]]
-            - percents: [[0.75, 1], [1, 1], [0.75, 1], [1, 1]]
-            - percents: [[1, 1], [0.75, 1], [1, 1], [0.75, 1]]
-            - percents: [[0.75, 1], [1, 1], [1, 1], [1, 1]]
-            - percents: [[1, 1], [0.75, 1], [1, 1], [1, 1]]
-            - percents: [[1, 1], [1, 1], [0.75, 1], [1, 1]]
-            - percents: [[1, 1], [1, 1], [1, 1], [0.75, 1]]
-            - percents: [[1, 1], [1, 1], [1, 1], [1, 1]]
+      # - prob: 1
+      #   args:
+      #     weights: [750, 50, 50, 25, 25, 25, 25, 50]
+      #     args:
+      #       - percents: [[0.75, 1], [0.75, 1], [0.75, 1], [0.75, 1]]
+      #       - percents: [[0.75, 1], [1, 1], [0.75, 1], [1, 1]]
+      #       - percents: [[1, 1], [0.75, 1], [1, 1], [0.75, 1]]
+      #       - percents: [[0.75, 1], [1, 1], [1, 1], [1, 1]]
+      #       - percents: [[1, 1], [0.75, 1], [1, 1], [1, 1]]
+      #       - percents: [[1, 1], [1, 1], [0.75, 1], [1, 1]]
+      #       - percents: [[1, 1], [1, 1], [1, 1], [0.75, 1]]
+      #       - percents: [[1, 1], [1, 1], [1, 1], [1, 1]]
 
 effect:
   args:
     # color
-    - prob: 0.2
+    - prob: 0
       args:
         rgb: [[0, 255], [0, 255], [0, 255]]
         alpha: [0, 0.2]
     # shadow
     - prob: 1
       args:
-        intensity: [0, 160]
+        intensity: [0, 40]
         amount: [0, 1]
         smoothing: [0.5, 1]
         bidirectional: 0
@@ -107,7 +109,7 @@ effect:
     # brightness
     - prob: 1
       args:
-        beta: [-48, 0]
+        beta: [-32, 16]
     # motion blur
     - prob: 0.5
       args:
