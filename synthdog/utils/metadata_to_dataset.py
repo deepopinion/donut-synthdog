@@ -31,8 +31,12 @@ for dirpath, _, filenames in os.walk(args.input_folder):
             logger.debug("Found %s", doc['image'])
             gt = json.loads(line["ground_truth"])["gt_parse"]
             words = bboxes = gt["words"]
-            boxes = bboxes = gt["quads"]
-            doc["bboxes"] = [BBox.from_easy_ocr_output(box_as_quads).to_dict() for box_as_quads in boxes]
+            quads = bboxes = gt["quads"]
+            doc["bboxes"] = []
+            for word, quad in zip(words, quads):
+                box = BBox.from_easy_ocr_output(quad)
+                box.text = word
+                doc["bboxes"].append(box.to_dict())
 
             samples[split].append(doc)
 

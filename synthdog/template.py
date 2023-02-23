@@ -15,7 +15,7 @@ from synthtiger import components, layers, templates
 
 
 class SynthDoG(templates.Template):
-    def __init__(self, config=None, split_ratio: List[float] = [0.8, 0.1, 0.1]):
+    def __init__(self, config=None, split_ratio=(8, 1, 1)):
         super().__init__(config)
         if config is None:
             config = {}
@@ -43,7 +43,8 @@ class SynthDoG(templates.Template):
         # config for splits
         self.splits = ["train", "validation", "test"]
         self.split_ratio = split_ratio
-        self.split_indexes = np.random.choice(3, size=10000, p=split_ratio)
+        #self.split_indexes = np.random.choice(3, size=10000, p=split_ratio)
+        self.split_indexes = np.repeat(range(3), split_ratio)
 
     def generate(self):
         landscape = np.random.rand() < self.landscape
